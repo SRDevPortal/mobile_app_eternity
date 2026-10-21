@@ -113,37 +113,22 @@ def setup():
             meta = frappe.get_meta(doctype)
             existing = frappe.db.get_value("Custom Field", {"dt": doctype, "fieldname": FIELD}, ["name", "fieldtype"], as_dict=True)
             if existing and existing.fieldtype == "Select":
-                # Both field types use the existing varchar column. Validate every
-                # stored label before converting only our display metadata to Link.
-                values = frappe.get_all(doctype, pluck=FIELD, distinct=True)
-                if any(value and value not in brand_names() for value in values):
-                    frappe.throw(_("Unknown app brand on {0}; create its brand record first.").format(doctype))
-                frappe.db.set_value("Custom Field", existing.name,
-                                    {"fieldtype": "Link", "options": "Mobile App Brand"})
-                frappe.clear_cache(doctype=doctype)
+                # Preserve legacy Select metadata until a separately validated
+                # conversion; never scan business tables during installation.
+                continue
             definitions[doctype] = [dict(fieldname=FIELD, label="App Brand", fieldtype="Link",
                 options="Mobile App Brand", insert_after=meta.fields[0].fieldname,
                 read_only=1, in_list_view=1, in_standard_filter=1, search_index=1,
                 description="Source app. Blank means no unambiguous app origin is recorded.")]
     create_custom_fields(definitions, update=True)
-    return backfill()
+    # Historical records are updated only by an administrator-started job.
+    from mobile_app.brand_backfill import ensure_state
+    ensure_state()
 
 def backfill():
-    counts = {}
-    for typ in DOCTYPES:
-        if not frappe.db.exists("DocType", typ) or not frappe.get_meta(typ).has_field(FIELD):
-            continue
-        changed = 0
-        # Metadata-only maintenance: do not save invoices or execute business hooks.
-        for offset in range(0, frappe.db.count(typ), 200):
-            for row in frappe.get_all(typ, fields=["*"], order_by="name", start=offset, page_length=200):
-                row.doctype = typ
-                value = resolve(row)
-                if (row.get(FIELD) or "") != value:
-                    frappe.db.set_value(typ, row.name, FIELD, value, update_modified=False)
-                    changed += 1
-        counts[typ] = changed
-    return counts
+    """Compatibility entry point: request background work, never scan inline."""
+    from mobile_app.brand_backfill import start
+    return start()
 
 @frappe.whitelist()
 def counts(brand=""):

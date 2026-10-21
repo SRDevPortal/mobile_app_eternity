@@ -1,0 +1,69 @@
+{
+  "doctype": "DocType",
+  "name": "Mobile App Brand Update",
+  "module": "MobileApp",
+  "engine": "InnoDB",
+  "autoname": "prompt",
+  "allow_rename": 0,
+  "field_order": [
+    "status",
+    "doctype_index",
+    "last_name",
+    "processed",
+    "changed",
+    "last_error"
+  ],
+  "fields": [
+    {
+      "fieldname": "status",
+      "label": "Status",
+      "fieldtype": "Select",
+      "options": "Idle\nPending\nRunning\nCompleted\nFailed",
+      "default": "Idle",
+      "in_list_view": 1,
+      "read_only": 1
+    },
+    {
+      "fieldname": "doctype_index",
+      "label": "Table position",
+      "fieldtype": "Int",
+      "read_only": 1,
+      "default": "0"
+    },
+    {
+      "fieldname": "last_name",
+      "label": "Last processed record",
+      "fieldtype": "Data",
+      "read_only": 1
+    },
+    {
+      "fieldname": "processed",
+      "label": "Records checked",
+      "fieldtype": "Int",
+      "read_only": 1,
+      "default": "0"
+    },
+    {
+      "fieldname": "changed",
+      "label": "Labels changed",
+      "fieldtype": "Int",
+      "read_only": 1,
+      "default": "0"
+    },
+    {
+      "fieldname": "last_error",
+      "label": "Last error",
+      "fieldtype": "Small Text",
+      "read_only": 1
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1,
+      "report": 1
+    }
+  ],
+  "sort_field": "modified",
+  "sort_order": "DESC"
+}

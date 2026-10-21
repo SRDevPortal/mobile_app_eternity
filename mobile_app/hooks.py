@@ -334,7 +334,10 @@ doc_events.setdefault("Healthcare Settings", {})["validate"] = "mobile_app.opd_s
 doc_events.setdefault("Mobile Appointment Workflow", {})["validate"] = "mobile_app.opd_store.protect_workflow"
 
 # Durable token outbox and delivery reconciliation.
-scheduler_events = {"cron": {"* * * * *": ["mobile_app.token_notifications.process_pending"]}}
+scheduler_events = {"cron": {"* * * * *": [
+    "mobile_app.token_notifications.process_pending",
+    "mobile_app.brand_backfill.schedule",
+]}}
 
 # Derived source-app labels, not authorization rules.
 for _brand_doctype in ("Mobile App User", "Mobile App Appointment", "Patient Encounter", "Sales Invoice",
