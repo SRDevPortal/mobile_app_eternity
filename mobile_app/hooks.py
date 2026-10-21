@@ -11,6 +11,7 @@ before_migrate = "mobile_app.install.refresh_module_map"
 after_install = [
     "mobile_app.install.refresh_module_map",
     "mobile_app.install.ensure_workspace",
+    "mobile_app.brand.setup",
     "mobile_app.diet_chart_setup.after_migrate",
     "mobile_app.calendar_setup.after_migrate",
     "mobile_app.opd_setup.after_migrate",
@@ -18,12 +19,13 @@ after_install = [
 ]
 after_migrate = [
     "mobile_app.install.ensure_workspace",
+    "mobile_app.brand.setup",
     "mobile_app.diet_chart_setup.after_migrate",
     "mobile_app.calendar_setup.after_migrate",
     "mobile_app.opd_setup.after_migrate",
     "mobile_app.practitioner_setup.setup_practitioner_diseases",
 ]
-boot_session = "mobile_app.realtime.boot_session"
+boot_session = ["mobile_app.realtime.boot_session", "mobile_app.brand.boot_session"]
 
 # Apps
 # ------------------
@@ -46,14 +48,15 @@ boot_session = "mobile_app.realtime.boot_session"
 
 # include js, css files in header of desk.html
 app_include_css = [
-	"/assets/mobile_app/css/mobile_app_clinical.css?v=20260525_dashboard_blank_fix",
+	"/assets/mobile_app/css/mobile_app_clinical.css?v=20261021_native_links",
 	"/assets/mobile_app/css/doctor_clinical.css",
 ]
 app_include_js = [
 	"/assets/mobile_app/js/doctor_clinical_guard.js",
 	"/assets/mobile_app/js/mobile_app_desk_utils.js",
+    "/assets/mobile_app/js/mobile_app_brand.js?v=20261021_registry",
 	"/assets/mobile_app/js/mobile_app_realtime.js?v=20260929_events",
-	"/assets/mobile_app/js/mobile_app_workspace.js?v=20261014_compact_cards",
+	"/assets/mobile_app/js/mobile_app_workspace.js?v=20261021_native_links2",
 ]
 # app_include_js = "/assets/mobile_app/js/mobile_app.js"
 
@@ -332,3 +335,13 @@ doc_events.setdefault("Mobile Appointment Workflow", {})["validate"] = "mobile_a
 
 # Durable token outbox and delivery reconciliation.
 scheduler_events = {"cron": {"* * * * *": ["mobile_app.token_notifications.process_pending"]}}
+
+# Derived source-app labels, not authorization rules.
+for _brand_doctype in ("Mobile App User", "Mobile App Appointment", "Patient Encounter", "Sales Invoice",
+                       "Support Ticket", "App Support Ticket", "Siya Mobile Record", "Chat Conversation"):
+    _brand_events = doc_events.setdefault(_brand_doctype, {})
+    _existing_brand_handler = _brand_events.get("before_validate", [])
+    if isinstance(_existing_brand_handler, str):
+        _existing_brand_handler = [_existing_brand_handler]
+    _brand_events["before_validate"] = [*_existing_brand_handler, "mobile_app.brand.stamp"]
+doc_events.setdefault("Mobile App Appointment", {})["on_update"] = "mobile_app.brand.sync_encounter"

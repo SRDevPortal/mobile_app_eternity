@@ -547,8 +547,8 @@ body.ma-mobile-dashboard-active [data-page-route="Workspaces"] .layout-main-sect
 	background: #f8fafc;
 }
 
-body.ma-mobile-dashboard-active [data-page-route="Workspaces"] .shortcut-widget-box,
-body.ma-mobile-dashboard-active [data-page-route="Workspaces"] .ce-block:has(.shortcut-widget-box) {
+body.ma-mobile-dashboard-active [data-page-route="Workspaces"] .shortcut-widget-box:not(.ma-related-shortcut),
+body.ma-mobile-dashboard-active [data-page-route="Workspaces"] .ce-block:has(.shortcut-widget-box:not(.ma-related-shortcut)) {
 	display: none !important;
 }
 
@@ -556,13 +556,13 @@ body.ma-mobile-dashboard-active .layout-main-section:has(.ma-workspace-title) {
 	background: #f8fafc;
 }
 
-body.ma-mobile-dashboard-active .layout-main-section:has(.ma-workspace-title) .shortcut-widget-box,
-body.ma-mobile-dashboard-active .layout-main-section:has(.ma-workspace-title) .ce-block:has(.shortcut-widget-box) {
+body.ma-mobile-dashboard-active .layout-main-section:has(.ma-workspace-title) .shortcut-widget-box:not(.ma-related-shortcut),
+body.ma-mobile-dashboard-active .layout-main-section:has(.ma-workspace-title) .ce-block:has(.shortcut-widget-box:not(.ma-related-shortcut)) {
 	display: none !important;
 }
 
 /* Fallback: style native Workspace shortcuts while the dashboard script is loading. */
-.layout-main-section:has(.ma-workspace-title) .shortcut-widget-box {
+.layout-main-section:has(.ma-workspace-title) .shortcut-widget-box:not(.ma-related-shortcut) {
 	position: relative;
 	min-height: 192px;
 	border: 0 !important;
@@ -577,30 +577,30 @@ body.ma-mobile-dashboard-active .layout-main-section:has(.ma-workspace-title) .c
 		box-shadow 0.25s ease !important;
 }
 
-.layout-main-section:has(.ma-workspace-title) .shortcut-widget-box:hover {
+.layout-main-section:has(.ma-workspace-title) .shortcut-widget-box:not(.ma-related-shortcut):hover {
 	transform: translateY(-4px);
 	box-shadow: 0 24px 46px rgba(15, 23, 42, 0.18) !important;
 }
 
-.layout-main-section:has(.ma-workspace-title) .ce-block:nth-of-type(3) .shortcut-widget-box {
+.layout-main-section:has(.ma-workspace-title) .ce-block:nth-of-type(3) .shortcut-widget-box:not(.ma-related-shortcut) {
 	background: linear-gradient(135deg, #3b82f6 0%, #0284c7 100%);
 }
 
-.layout-main-section:has(.ma-workspace-title) .ce-block:nth-of-type(4) .shortcut-widget-box {
+.layout-main-section:has(.ma-workspace-title) .ce-block:nth-of-type(4) .shortcut-widget-box:not(.ma-related-shortcut) {
 	background: linear-gradient(135deg, #a855f7 0%, #4f46e5 100%);
 }
 
-.layout-main-section:has(.ma-workspace-title) .ce-block:nth-of-type(5) .shortcut-widget-box {
+.layout-main-section:has(.ma-workspace-title) .ce-block:nth-of-type(5) .shortcut-widget-box:not(.ma-related-shortcut) {
 	background: linear-gradient(135deg, #f97316 0%, #dc2626 100%);
 }
 
-.layout-main-section:has(.ma-workspace-title) .shortcut-widget-box .widget-head {
+.layout-main-section:has(.ma-workspace-title) .shortcut-widget-box:not(.ma-related-shortcut) .widget-head {
 	align-items: flex-start !important;
 	height: 100%;
 }
 
-.layout-main-section:has(.ma-workspace-title) .shortcut-widget-box .widget-title,
-.layout-main-section:has(.ma-workspace-title) .shortcut-widget-box .widget-title span {
+.layout-main-section:has(.ma-workspace-title) .shortcut-widget-box:not(.ma-related-shortcut) .widget-title,
+.layout-main-section:has(.ma-workspace-title) .shortcut-widget-box:not(.ma-related-shortcut) .widget-title span {
 	color: rgba(255, 255, 255, 0.84) !important;
 	font-size: 0.8rem !important;
 	font-weight: 800 !important;
@@ -609,7 +609,7 @@ body.ma-mobile-dashboard-active .layout-main-section:has(.ma-workspace-title) .c
 	white-space: normal !important;
 }
 
-.layout-main-section:has(.ma-workspace-title) .shortcut-widget-box .indicator-pill {
+.layout-main-section:has(.ma-workspace-title) .shortcut-widget-box:not(.ma-related-shortcut) .indicator-pill {
 	position: absolute;
 	left: 24px;
 	top: 72px;
@@ -622,7 +622,7 @@ body.ma-mobile-dashboard-active .layout-main-section:has(.ma-workspace-title) .c
 	line-height: 1 !important;
 }
 
-.layout-main-section:has(.ma-workspace-title) .shortcut-widget-box .widget-control {
+.layout-main-section:has(.ma-workspace-title) .shortcut-widget-box:not(.ma-related-shortcut) .widget-control {
 	position: absolute;
 	top: 48px;
 	right: 24px;
@@ -636,11 +636,11 @@ body.ma-mobile-dashboard-active .layout-main-section:has(.ma-workspace-title) .c
 	color: #fff !important;
 }
 
-.layout-main-section:has(.ma-workspace-title) .shortcut-widget-box .widget-control svg {
+.layout-main-section:has(.ma-workspace-title) .shortcut-widget-box:not(.ma-related-shortcut) .widget-control svg {
 	stroke: #fff !important;
 }
 
-.layout-main-section:has(.ma-workspace-title) .shortcut-widget-box::before {
+.layout-main-section:has(.ma-workspace-title) .shortcut-widget-box:not(.ma-related-shortcut)::before {
 	content: "";
 	position: absolute;
 	left: 24px;
@@ -650,7 +650,7 @@ body.ma-mobile-dashboard-active .layout-main-section:has(.ma-workspace-title) .c
 	background: rgba(255, 255, 255, 0.18);
 }
 
-.layout-main-section:has(.ma-workspace-title) .shortcut-widget-box::after {
+.layout-main-section:has(.ma-workspace-title) .shortcut-widget-box:not(.ma-related-shortcut)::after {
 	position: absolute;
 	left: 24px;
 	right: 24px;
@@ -663,19 +663,19 @@ body.ma-mobile-dashboard-active .layout-main-section:has(.ma-workspace-title) .c
 	white-space: pre;
 }
 
-.layout-main-section:has(.ma-workspace-title) .ce-block:nth-of-type(2) .shortcut-widget-box::after {
+.layout-main-section:has(.ma-workspace-title) .ce-block:nth-of-type(2) .shortcut-widget-box:not(.ma-related-shortcut)::after {
 	content: "Added last month                                    8,240";
 }
 
-.layout-main-section:has(.ma-workspace-title) .ce-block:nth-of-type(3) .shortcut-widget-box::after {
+.layout-main-section:has(.ma-workspace-title) .ce-block:nth-of-type(3) .shortcut-widget-box:not(.ma-related-shortcut)::after {
 	content: "Today's Appointments                               --";
 }
 
-.layout-main-section:has(.ma-workspace-title) .ce-block:nth-of-type(4) .shortcut-widget-box::after {
+.layout-main-section:has(.ma-workspace-title) .ce-block:nth-of-type(4) .shortcut-widget-box:not(.ma-related-shortcut)::after {
 	content: "Active Tickets                                      --";
 }
 
-.layout-main-section:has(.ma-workspace-title) .ce-block:nth-of-type(5) .shortcut-widget-box .widget-head::after {
+.layout-main-section:has(.ma-workspace-title) .ce-block:nth-of-type(5) .shortcut-widget-box:not(.ma-related-shortcut) .widget-head::after {
 	content: "10";
 	position: absolute;
 	left: 24px;
@@ -686,7 +686,7 @@ body.ma-mobile-dashboard-active .layout-main-section:has(.ma-workspace-title) .c
 	line-height: 1;
 }
 
-.layout-main-section:has(.ma-workspace-title) .ce-block:nth-of-type(5) .shortcut-widget-box::after {
+.layout-main-section:has(.ma-workspace-title) .ce-block:nth-of-type(5) .shortcut-widget-box:not(.ma-related-shortcut)::after {
 	content: "SLA Status                                  100% Online";
 }
 

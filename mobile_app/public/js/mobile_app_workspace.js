@@ -52,6 +52,24 @@
 		},
 	];
 
+    let related_links = [];
+    async function refresh_related_links() {
+        const $links = $dashboard.find(".ma-related-links");
+        try {
+            related_links = await frappe.xcall("mobile_app.workspace.get_related_links");
+            $links.html(related_links.map(row => `
+                <a class="widget shortcut-widget-box ma-related-shortcut" href="/app/${escape_html(frappe.router.slug(row.doctype))}"
+                   data-related-doctype="${escape_html(row.doctype)}"
+                   title="${escape_html(__(row.brand_filtered ? "Uses the selected app brand" : "All mobile apps"))}">
+                    <div class="widget-head"><div class="widget-label"><div class="widget-title">
+                        <span class="ellipsis">${escape_html(__(row.doctype))}</span>
+                    </div></div><div class="widget-control">${frappe.utils.icon("es-line-arrow-up-right", "xs", "", "", "ml-2")}</div></div>
+                </a>`).join(""));
+        } catch (_) {
+            $links.html(`<p role="alert">${escape_html(__("Unable to load related records."))} <button type="button" class="btn btn-link ma-related-retry">${escape_html(__("Retry"))}</button></p>`);
+        }
+    }
+
 	function escape_html(value) {
 		return frappe.utils.escape_html(String(value ?? ""));
 	}
@@ -85,6 +103,15 @@
 		const style = document.createElement("style");
 		style.id = STYLE_ID;
 		style.textContent = `
+			.ma-brand-toolbar { display:flex; align-items:center; gap:16px; flex-wrap:wrap; margin-bottom:20px; }
+            .ma-brand-toolbar label { margin:0; font-weight:600; }
+            .ma-brand-toolbar select { min-width:190px; }
+            .ma-brand-note { color:var(--text-muted); margin-bottom:20px; }
+            .ma-related-links { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px 24px; padding:0 0 20px; }
+            .ma-related-links a { text-decoration:none; }
+            .ma-related-links a:focus-visible { outline:2px solid var(--primary); outline-offset:3px; }
+            @media (max-width:1199px) { .ma-related-links { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+            @media (max-width:575px) { .ma-related-links { grid-template-columns:1fr; } }
 			.${DASHBOARD_SHELL_CLASS} { width: 100%; max-width: none; margin: 0 0 28px; }
 			.${DASHBOARD_CLASS} { width: 100%; max-width: none; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; margin: 0 0 28px; }
 			.ma-mobile-dashboard-card { position: relative; min-height: 144px; border: 0; border-radius: 20px; padding: 22px; gap: 22px; display: flex; flex-direction: column; justify-content: space-between; color: #fff; text-align: left; overflow: hidden; cursor: pointer; box-shadow: 0 8px 20px rgba(15, 23, 42, 0.10); transition: transform .25s ease, box-shadow .25s ease; }
@@ -144,7 +171,7 @@
 					<div class="ma-mobile-dashboard-card__rule"></div>
 					<div class="ma-mobile-dashboard-card__footer">
 						<span>${escape_html(card.footer_label)}</span>
-						<strong data-card-footer="${card.key}">${escape_html(card.footer_value)} <span aria-hidden="true">→</span></strong>
+						<strong data-card-footer="${card.key}">${escape_html(card.footer_value)} <span aria-hidden="true">&rarr;</span></strong>
 					</div>
 				</div>
 			</button>
@@ -195,7 +222,7 @@
 			delete frappe._mobile_support_target;
 			frappe.route_options = null;
 			dialog.hide();
-			frappe.set_route(...choice.route);
+			mobile_app.brand.open(choice.route);
 		});
 		dialog.show();
 	}
@@ -205,7 +232,7 @@
 			const card = CARDS.find((item) => item.key === $(this).data("card-key"));
 			if (!card?.route) return;
 			if (card.key === "tickets") return open_support_menu();
-			frappe.set_route(...card.route);
+			mobile_app.brand.open(card.route);
 		});
 	}
 
@@ -229,15 +256,42 @@
 			if (first_render) {
 				$dashboard = $(`
 					<div class="${DASHBOARD_SHELL_CLASS}">
-						<div class="${DASHBOARD_CLASS}">${CARDS.map(card_html).join("")}</div>
+						<div class="ma-brand-toolbar"><label for="ma-brand-filter">App brand</label><select id="ma-brand-filter" class="form-control" aria-label="App brand" style="width:auto">${mobile_app.brand.options()}</select><button type="button" class="btn btn-default btn-sm ma-brand-manage">Manage brands</button></div>
+                        <p class="ma-brand-note">Choose a brand before opening a section. Records without a confirmed app origin appear under Unclassified. Diet and care records remain available from the linked user profile.</p>
+                        <div class="${DASHBOARD_CLASS}">${CARDS.map(card_html).join("")}</div>
+                        <div class="ma-related-links" aria-label="Related mobile app records"></div>
 					</div>
 				`);
-				bind_cards($dashboard);
+                bind_cards($dashboard);
+                $dashboard.on("click", "[data-related-doctype]", function (event) {
+                    event.preventDefault();
+                    const row = related_links.find(item => item.doctype === $(this).attr("data-related-doctype"));
+                    if (!row) return;
+                    if (row.single) {
+                        frappe.route_options = null;
+                        frappe.set_route("Form", row.doctype, row.doctype);
+                    } else if (row.brand_filtered) {
+                        mobile_app.brand.open(["List", row.doctype]);
+                    } else {
+                        frappe.route_options = {name: ["is", "set"]};
+                        frappe.set_route("List", row.doctype);
+                    }
+                });
+                $dashboard.on("click", ".ma-related-retry", refresh_related_links);
+                $dashboard.find(".ma-brand-manage").on("click", () => { frappe.route_options = null; frappe.set_route("List", "Mobile App Brand"); });
+                $dashboard.find("#ma-brand-filter").val(mobile_app.brand.get()).on("change", function () {
+                    mobile_app.brand.set(this.value);
+                });
 			}
 			// Stay outside #editorjs: its asynchronous render replaces its contents.
 			// Reuse these nodes when returning from a list or workspace.
 			if ($dashboard.parent()[0] !== $root[0]) {
 				$root.prepend($dashboard);
+                refresh_related_links();
+                mobile_app.brand.refresh().then(() => {
+                    $dashboard.find("#ma-brand-filter").html(mobile_app.brand.options()).val(mobile_app.brand.get());
+                }).catch(() => frappe.show_alert({message: __("Unable to refresh app brands. Please reload."), indicator: "orange"}));
+                if (!first_render) { $dashboard.find("#ma-brand-filter").val(mobile_app.brand.get()); }
 			}
 			hide_raw_workspace_blocks($root);
 		} finally {

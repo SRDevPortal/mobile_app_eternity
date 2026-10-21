@@ -58,7 +58,9 @@
             frappe.xcall('mobile_app.api.opd_queue.bootstrap').then(boot=>{
                 this.$root.find('.ac-branch-filter').html('<option value="">All branches</option>'+boot.clinics.map(c=>`<option value="${esc(c.name)}">${esc(c.clinic_name)}</option>`).join(''));
             }).catch(()=>this.$root.find('.ac-branch-filter').hide());
-            this.$root.on('change','.ac-branch-filter',e=>{this.branchFilter=e.target.value;this.refilter();});
+            this.$root.find('.ac-app-brand-filter').val(mobile_app.brand.get());
+            this.$root.on('change', '.ac-app-brand-filter', e => { mobile_app.brand.set(e.target.value); this.refilter(); });
+            this.$root.on('change','.ac-branch-filter' ,e=>{this.branchFilter=e.target.value;this.refilter();});
             this.initCalendar();
             if (this.opdOnly) { this.$root.find('[data-action="calendar"], [data-action="doctors"], [data-action="encounters"]').hide(); this.switchSection("opd"); }
             mobile_app.realtime.watch("calendar", ["Mobile App Appointment", "Patient Encounter",
@@ -120,7 +122,7 @@
                         <div class="ac-legend"><h2>APPOINTMENT STATUS</h2>${["Pending", "Approved", "Checked In", "Completed", "Cancelled"].map(s => `<div>${statusMark(s)}${s}</div>`).join("")}</div>
                         <p class="ac-sidebar-note">Select a doctor to filter the calendar. Select a booking to review it.</p>
                     </aside><section class="ac-calendar-area" aria-label="Appointment calendar">
-                        <div class="ac-calendar-tools"><select class="ac-branch-filter" aria-label="Appointment branch"><option value="">All branches</option></select><div class="ac-zoom" role="group" aria-label="Calendar time scale">
+                        <div class="ac-calendar-tools"><select class="ac-app-brand-filter" aria-label="App brand">${mobile_app.brand.options()}</select><select class="ac-branch-filter" aria-label="Appointment branch"><option value="">All branches</option></select><div class="ac-zoom" role="group" aria-label="Calendar time scale">
                             <span>Time scale</span>
                             ${this.button("zoom-out", "&minus;", "ac-icon-btn", 'aria-label="Zoom out calendar" title="Zoom out: see more hours"')}
                             ${this.button("zoom-reset", `${this.zoom}%`, "ac-zoom-value", 'aria-label="Reset calendar zoom to 100 percent" title="Reset to 100%"')}
@@ -468,6 +470,7 @@
         matches(r, includeQueue = true, includeDoctor = true) {
             const stages = {Pending:"Pending", Approved:"Approved", Cancelled:"Cancelled", "Checked In":"Checked In", Completed:"Completed"};
             return (!this.range || (r.date >= this.range.start.format("YYYY-MM-DD") && r.date < this.range.end.format("YYYY-MM-DD"))) &&
+                mobile_app.brand.matches(r.app_brand) &&
                 (this.section === "online" ? r.online : (!this.branchFilter || r.clinic === this.branchFilter)) &&
                 (!includeDoctor || !this.doctor || r.doctor_id === this.doctor) &&
                 (!includeQueue || this.queue === "All" || r.status === stages[this.queue]) &&
@@ -595,7 +598,7 @@
         }
         reconcileQueue($next, accept = false) {
             const $view=this.$root.find('.ac-queue-view');
-            const key=JSON.stringify([this.section,this.range?.start.format('YYYY-MM-DD'),this.range?.end.format('YYYY-MM-DD'),this.doctor,this.queue,this.search,this.branchFilter,this.channel]);
+            const key=JSON.stringify([this.section,this.range?.start.format('YYYY-MM-DD'),this.range?.end.format('YYYY-MM-DD'),this.doctor,this.queue,this.search,this.branchFilter,this.channel,mobile_app.brand.get()]);
             let $list=$view.find('.ac-queue-list');
             if (!$list.length || key !== this.queueViewKey) {
                 clearTimeout(this.queueRenderTimer); this.queueViewKey=key; this.queueScrolledAt=0;
@@ -868,6 +871,10 @@
             }
         }
         show() {
+            mobile_app.brand.refresh().then(() => {
+                this.$root.find(".ac-app-brand-filter").html(mobile_app.brand.options()).val(mobile_app.brand.get());
+                this.refilter();
+            }).catch(() => frappe.show_alert({message: __("Unable to refresh app brands."), indicator: "orange"}));
             const route=frappe.get_route();
             if(route[1]==='room' && route[2]){
                 this.opd.selectedRoom=route[2];this.opd.section='room';

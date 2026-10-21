@@ -1,0 +1,66 @@
+{
+  "doctype": "DocType",
+  "name": "Mobile App Brand",
+  "module": "MobileApp",
+  "autoname": "field:brand_name",
+  "engine": "InnoDB",
+  "allow_rename": 0,
+  "track_changes": 1,
+  "field_order": [
+    "brand_name",
+    "app_id",
+    "customer_id_prefix",
+    "chat_channel_account"
+  ],
+  "fields": [
+    {
+      "fieldname": "brand_name",
+      "label": "Brand Name",
+      "fieldtype": "Data",
+      "reqd": 1,
+      "unique": 1,
+      "in_list_view": 0
+    },
+    {
+      "fieldname": "app_id",
+      "label": "App ID",
+      "fieldtype": "Data",
+      "reqd": 1,
+      "unique": 1,
+      "in_list_view": 1,
+      "description": "Stable backend app identifier, for example seedfit. Adding a brand here does not configure backend authentication."
+    },
+    {
+      "fieldname": "customer_id_prefix",
+      "label": "Customer ID Prefix",
+      "fieldtype": "Data",
+      "unique": 1,
+      "description": "Exact prefix before the numeric Shopify customer ID, for example seedfit:gid://shopify/Customer/. Must match the backend; leave empty until configured."
+    },
+    {
+      "fieldname": "chat_channel_account",
+      "label": "QuickLink Channel Account",
+      "fieldtype": "Data",
+      "unique": 1,
+      "description": "Exact existing Chat Conversation channel_account value. Leave empty if the app has no QuickLink channel."
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 1,
+      "report": 1,
+      "export": 1
+    },
+    {
+      "role": "Desk User",
+      "read": 1,
+      "report": 1
+    }
+  ],
+  "sort_field": "brand_name",
+  "sort_order": "ASC"
+}

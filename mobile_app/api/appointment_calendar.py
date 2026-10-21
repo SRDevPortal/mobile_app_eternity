@@ -156,7 +156,7 @@ def _serialize(doc, workflow, context, details=False):
     out = dict(id=f"{doc.doctype}:{doc.name}", source_doctype=doc.doctype, name=doc.name,
                patient_name=patient_name or doc.get("patient") or _("Unnamed patient"),
                phone=phone, patient=doc.get("patient") or doc.get("mobile_app_user"),
-               booking_id=doc.get("booking_id"), email=doc.get("email"),
+               booking_id=doc.get("booking_id"), email=doc.get("email"), app_brand=doc.get("custom_app_brand") or "",
                doctor_id=doctor_id, doctor_name=doctor_name,
                date=str(date) if date else None, time=get_time(time or "09:00:00").strftime("%H:%M:%S"),
                duration=cint(workflow.get("duration_minutes")) or 30,
@@ -347,6 +347,15 @@ def get_calendar(start, end):
                 disease_tags.setdefault(row.parent, []).append(row.disease)
     for doctor in doctors:
         doctor["diseases"] = disease_tags.get(doctor.id, [])
+    from mobile_app.brand import FIELD
+    for source in SOURCES:
+        names = [row["name"] for row in result if row["source_doctype"] == source]
+        if names and frappe.get_meta(source).has_field(FIELD):
+            brands = {row.name: row.get(FIELD) for row in frappe.get_all(source,
+                filters={"name": ["in", names]}, fields=["name", FIELD], limit_page_length=0)}
+            for row in result:
+                if row["source_doctype"] == source:
+                    row["app_brand"] = brands.get(row["name"]) or ""
     return {"appointments": result, "doctors": doctors, "revisions": revisions,
             "can_assign": context[2], "user": context[0],
             "reception_only": bool(context[1].intersection(RECEPTION_ROLES)) and not context[2],
