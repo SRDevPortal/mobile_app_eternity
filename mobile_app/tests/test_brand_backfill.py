@@ -44,14 +44,15 @@ class TestBrandBackfill(unittest.TestCase):
         self.assertEqual(state.status, "Running")
 
     def test_install_does_not_backfill_or_scan_business_records(self):
-        with patch.object(frappe.db, "exists", return_value=True),              patch.object(frappe.db, "get_value", return_value=None),              patch.object(frappe, "get_meta", return_value=frappe._dict(fields=[frappe._dict(fieldname="name")])),              patch("frappe.custom.doctype.custom_field.custom_field.create_custom_fields"),              patch.object(job, "ensure_state") as ensure,              patch.object(frappe, "get_all") as scan, patch.object(brand, "backfill") as fill:
+        with patch.object(brand, "repair_missing_brand_columns") as repair, patch.object(frappe.db, "exists", return_value=True),              patch.object(frappe.db, "get_value", return_value=None),              patch.object(frappe, "get_meta", return_value=frappe._dict(fields=[frappe._dict(fieldname="name")])),              patch("frappe.custom.doctype.custom_field.custom_field.create_custom_fields"),              patch.object(job, "ensure_state") as ensure,              patch.object(frappe, "get_all") as scan, patch.object(brand, "backfill") as fill:
             brand.setup()
         ensure.assert_called_once()
         scan.assert_not_called()
         fill.assert_not_called()
+        repair.assert_called_once()
 
     def test_legacy_select_preserved_without_data_scan(self):
-        with patch.object(frappe.db, "exists", return_value=True),              patch.object(frappe.db, "get_value", return_value=frappe._dict(fieldtype="Select")),              patch.object(frappe, "get_meta"),              patch("frappe.custom.doctype.custom_field.custom_field.create_custom_fields") as fields,              patch.object(job, "ensure_state"), patch.object(frappe, "get_all") as scan:
+        with patch.object(brand, "repair_missing_brand_columns"), patch.object(frappe.db, "exists", return_value=True),              patch.object(frappe.db, "get_value", return_value=frappe._dict(fieldtype="Select")),              patch.object(frappe, "get_meta"),              patch("frappe.custom.doctype.custom_field.custom_field.create_custom_fields") as fields,              patch.object(job, "ensure_state"), patch.object(frappe, "get_all") as scan:
             brand.setup()
         fields.assert_called_once_with({}, update=True)
         scan.assert_not_called()

@@ -1,6 +1,6 @@
 """Regression coverage for installation on wide Sales Invoice tables."""
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import frappe
 from frappe.database.schema import get_definition
@@ -9,6 +9,39 @@ from mobile_app.mobileapp.doctype.mobile_app_brand.mobile_app_brand import Mobil
 
 
 class TestBrandSchema(unittest.TestCase):
+    def test_repair_checks_physical_columns_even_when_metadata_is_unchanged(self):
+        with patch.object(brand, "DOCTYPES", ("Mobile App User", "Sales Invoice")), \
+                patch.object(brand, "prepare_invoice_brand_schema") as prepare, \
+                patch.object(frappe.db, "exists", return_value=True), \
+                patch.object(frappe, "clear_cache"), \
+                patch.object(frappe, "get_meta", return_value=Mock(has_field=lambda name: True)), \
+                patch.object(frappe.db, "has_column", side_effect=[False, True, True]), \
+                patch.object(frappe.db, "updatedb") as sync:
+            self.assertEqual(brand.repair_missing_brand_columns(), ["Mobile App User"])
+            sync.assert_called_once_with("Mobile App User")
+            prepare.assert_called_once()
+
+    def test_repair_leaves_synchronized_tables_untouched(self):
+        with patch.object(brand, "prepare_invoice_brand_schema"), \
+                patch.object(frappe.db, "exists", return_value=True), \
+                patch.object(frappe, "clear_cache"), \
+                patch.object(frappe, "get_meta", return_value=Mock(has_field=lambda name: True)), \
+                patch.object(frappe.db, "has_column", return_value=True), \
+                patch.object(frappe.db, "updatedb") as sync:
+            self.assertEqual(brand.repair_missing_brand_columns(), [])
+            sync.assert_not_called()
+
+    def test_repair_reports_failure_instead_of_silently_succeeding(self):
+        with patch.object(brand, "DOCTYPES", ("Mobile App User",)), \
+                patch.object(brand, "prepare_invoice_brand_schema"), \
+                patch.object(frappe.db, "exists", return_value=True), \
+                patch.object(frappe, "clear_cache"), \
+                patch.object(frappe, "get_meta", return_value=Mock(has_field=lambda name: True)), \
+                patch.object(frappe.db, "has_column", return_value=False), \
+                patch.object(frappe.db, "updatedb"):
+            with self.assertRaisesRegex(RuntimeError, "Mobile App User"):
+                brand.repair_missing_brand_columns()
+
     def test_new_invoice_uses_text_and_other_documents_keep_links(self):
         field = brand.brand_field_definition("Sales Invoice", "name")
         self.assertEqual(get_definition(field["fieldtype"]), "text")
