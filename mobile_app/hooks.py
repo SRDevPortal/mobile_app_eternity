@@ -5,8 +5,8 @@ app_description = "Mobile app data storage"
 app_email = "admin@example.com"
 app_license = "mit"
 
-before_install = "mobile_app.install.refresh_module_map"
-before_migrate = "mobile_app.install.refresh_module_map"
+before_install = ["mobile_app.install.refresh_module_map", "mobile_app.brand.prepare_invoice_brand_schema"]
+before_migrate = ["mobile_app.install.refresh_module_map", "mobile_app.brand.prepare_invoice_brand_schema"]
 
 after_install = [
     "mobile_app.install.refresh_module_map",
