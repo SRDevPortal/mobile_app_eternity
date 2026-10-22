@@ -87,5 +87,9 @@ class TestBrand(unittest.TestCase):
         for typ in brand.DOCTYPES:
             if frappe.db.exists("DocType", typ):
                 field = frappe.get_meta(typ).get_field(brand.FIELD)
-                self.assertEqual(field.fieldtype, "Link")
-                self.assertEqual(field.options, "Mobile App Brand")
+                if typ == "Sales Invoice" and field.fieldtype == "Small Text":
+                    self.assertTrue(field.read_only)
+                    self.assertFalse(field.search_index)
+                else:
+                    self.assertEqual(field.fieldtype, "Link")
+                    self.assertEqual(field.options, "Mobile App Brand")

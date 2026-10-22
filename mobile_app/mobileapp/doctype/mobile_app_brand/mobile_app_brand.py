@@ -36,4 +36,10 @@ class MobileAppBrand(Document):
         frappe.local.mobile_app_brand_registry = None
 
     def on_trash(self):
+        # TEXT invoice provenance is not covered by Frappe's Link checks.
+        from mobile_app.brand import FIELD
+        if (frappe.db.exists("DocType", "Sales Invoice")
+                and frappe.db.has_column("Sales Invoice", FIELD)
+                and frappe.db.exists("Sales Invoice", {FIELD: self.name})):
+            frappe.throw(_("This brand is used by Sales Invoices and cannot be deleted."), frappe.LinkExistsError)
         frappe.local.mobile_app_brand_registry = None

@@ -101,6 +101,36 @@ def sync_encounter(doc, method=None):
                     for invoice in frappe.get_all("Sales Invoice", filters={"source_encounter": name}, pluck="name"):
                         frappe.db.set_value("Sales Invoice", invoice, FIELD, value, update_modified=False)
 
+def prepare_invoice_brand_schema():
+    """Repair metadata left by a failed install before core schema sync runs.
+
+    No invoice data or existing invoice column is altered here. Frappe DDL can
+    commit Custom Field metadata before adding the physical column fails.
+    """
+    if not frappe.db.exists("DocType", "Sales Invoice"):
+        return
+    field = frappe.db.get_value("Custom Field", {"dt": "Sales Invoice", "fieldname": FIELD},
+                                ["name", "fieldtype"], as_dict=True)
+    if field and field.fieldtype == "Link" and not frappe.db.has_column("Sales Invoice", FIELD):
+        frappe.db.set_value("Custom Field", field.name,
+                            {"fieldtype": "Small Text", "options": "", "search_index": 0},
+                            update_modified=False)
+        frappe.clear_cache(doctype="Sales Invoice")
+
+
+def brand_field_definition(doctype, insert_after, existing=None):
+    # A crowded Sales Invoice can exceed MariaDB's 65,535-byte logical row
+    # limit with another VARCHAR(140). TEXT has only a small inline footprint.
+    # Retain successfully installed Link columns; never rebuild their tables.
+    text_storage = doctype == "Sales Invoice" and not (
+        existing and existing.fieldtype == "Link" and frappe.db.has_column(doctype, FIELD)
+    )
+    return dict(fieldname=FIELD, label="App Brand", fieldtype="Small Text" if text_storage else "Link",
+                options="" if text_storage else "Mobile App Brand", insert_after=insert_after,
+                read_only=1, in_list_view=1, in_standard_filter=1, search_index=0 if text_storage else 1,
+                description="Source app. Blank means no unambiguous app origin is recorded.")
+
+
 def setup():
     from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
     for defaults in DEFAULT_BRANDS:
@@ -116,10 +146,7 @@ def setup():
                 # Preserve legacy Select metadata until a separately validated
                 # conversion; never scan business tables during installation.
                 continue
-            definitions[doctype] = [dict(fieldname=FIELD, label="App Brand", fieldtype="Link",
-                options="Mobile App Brand", insert_after=meta.fields[0].fieldname,
-                read_only=1, in_list_view=1, in_standard_filter=1, search_index=1,
-                description="Source app. Blank means no unambiguous app origin is recorded.")]
+            definitions[doctype] = [brand_field_definition(doctype, meta.fields[0].fieldname, existing)]
     create_custom_fields(definitions, update=True)
     # Historical records are updated only by an administrator-started job.
     from mobile_app.brand_backfill import ensure_state
