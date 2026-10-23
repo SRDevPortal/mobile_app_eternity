@@ -375,6 +375,68 @@ class TestAppointmentCalendar(unittest.TestCase):
         frappe.db.set_value("Patient Encounter", encounter, "pe_appointment_date", "2099-01-21")
         self.assertNotEqual(before, token())
 
+    def test_calendar_supports_each_optional_encounter_column_combination(self):
+        from itertools import combinations
+        from datetime import date
+
+        optional = {"pe_appointment_date", "pe_appointment_time", "pe_practitioner"}
+        all_columns = set(frappe.db.get_table_columns("Patient Encounter"))
+        self.assertTrue(optional.issubset(all_columns), "Run on the full-schema test site")
+        doctors = ["calendar-standard-" + self.suffix, "calendar-override-" + self.suffix]
+        for doctor in doctors:
+            frappe.get_doc({"doctype": "Healthcare Practitioner", "name": doctor,
+                "practitioner_name": doctor, "user_id": self.doctor, "status": "Active"}).db_insert()
+        name = "calendar-schema-" + self.suffix
+        frappe.get_doc({"doctype": "Patient Encounter", "name": name,
+            "patient_name": "Calendar schema test", "sr_encounter_type": "Appointment",
+            "sr_encounter_place": "Online", "encounter_date": "2099-01-10",
+            "encounter_time": "10:00:00", "practitioner": doctors[0],
+            "pe_appointment_date": "2099-01-12", "pe_appointment_time": "12:30:00",
+            "pe_practitioner": doctors[1]}).db_insert()
+        real_columns = frappe.db.get_table_columns
+        real_sql = api._calendar_sql
+        for count in range(4):
+            for subset in combinations(sorted(optional), count):
+                present = set(subset)
+                missing = optional - present
+                def columns(doctype):
+                    return list(all_columns - missing) if doctype == "Patient Encounter" else real_columns(doctype)
+                def checked_sql(query, *args, **kwargs):
+                    for field in missing:
+                        self.assertNotIn("e." + field, query)
+                    return real_sql(query, *args, **kwargs)
+                with self.subTest(present=subset), \
+                        patch.object(frappe.db, "get_table_columns", side_effect=columns), \
+                        patch.object(api, "_calendar_sql", side_effect=checked_sql):
+                    payload = api.get_calendar("2099-01-08", "2099-01-15")
+                    row = next(r for r in payload["appointments"] if r["name"] == name)
+                    expected_day = 12 if "pe_appointment_date" in present else 10
+                    self.assertEqual(row["date"], f"2099-01-{expected_day}")
+                    self.assertEqual(row["time"], "12:30:00" if "pe_appointment_time" in present else "10:00:00")
+                    self.assertEqual(row["doctor_id"], doctors[1] if "pe_practitioner" in present else doctors[0])
+                    self.assertEqual(payload["revisions"],
+                        api.get_calendar_changes("2099-01-08", "2099-01-15")["chunks"])
+                    # End-exclusive filtering follows the same date as the rendered event.
+                    before = api.get_calendar("2099-01-08", str(date(2099, 1, expected_day)))
+                    self.assertNotIn(name, [r["name"] for r in before["appointments"]])
+                    # Revision checks must also notice edits to the standard-date record.
+                    token = payload["revisions"]
+                    frappe.db.set_value("Patient Encounter", name, "patient_name", str(subset))
+                    self.assertNotEqual(token, api.get_calendar_changes("2099-01-08", "2099-01-15")["chunks"])
+
+    def test_optional_encounter_fields_with_empty_values_use_standard_fields(self):
+        name = "calendar-empty-override-" + self.suffix
+        frappe.get_doc({"doctype": "Patient Encounter", "name": name,
+            "patient_name": "Calendar fallback test", "sr_encounter_type": "Appointment",
+            "encounter_date": "2099-01-10", "encounter_time": "10:30:00",
+            "pe_practitioner": ""}).db_insert()
+        payload = api.get_calendar("2099-01-10", "2099-01-11")
+        row = next(r for r in payload["appointments"] if r["name"] == name)
+        self.assertEqual(row["date"], "2099-01-10")
+        self.assertEqual(row["time"], "10:30:00")
+        self.assertEqual(payload["revisions"],
+            api.get_calendar_changes("2099-01-10", "2099-01-11")["chunks"])
+
     def test_database_stops_slow_reads_without_leaking_session_timeout(self):
         import time
         before = frappe.db.sql("SELECT @@session.max_statement_time")[0][0]

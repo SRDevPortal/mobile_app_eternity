@@ -218,6 +218,33 @@ def _calendar_dates(start, end):
     return start, end
 
 
+def _encounter_calendar_fields(start, end):
+    """Use optional appointment overrides only when their columns exist.
+
+    Some healthcare sites only have the standard encounter date, time and
+    practitioner. Check physical columns as metadata can survive partial installs.
+    All SQL identifiers below are fixed application constants, never request data.
+    """
+    columns = set(frappe.db.get_table_columns("Patient Encounter"))
+    date = "e.encounter_date"
+    date_filter = "(e.encounter_date >= %s AND e.encounter_date < %s)"
+    values = (start, end)
+    if "pe_appointment_date" in columns:
+        date = "COALESCE(e.pe_appointment_date, e.encounter_date)"
+        date_filter = """((e.pe_appointment_date >= %s AND e.pe_appointment_date < %s)
+            OR (e.pe_appointment_date IS NULL AND e.encounter_date >= %s AND e.encounter_date < %s))"""
+        values = (start, end, start, end)
+    practitioner = "e.practitioner"
+    if "pe_practitioner" in columns:
+        practitioner = "COALESCE(NULLIF(e.pe_practitioner, ''), e.practitioner)"
+    optional = ", ".join(
+        f"e.{field}" if field in columns else f"NULL AS {field}"
+        for field in ("pe_appointment_date", "pe_appointment_time", "pe_practitioner")
+    )
+    return frappe._dict(date=date, date_filter=date_filter, params=values,
+                        practitioner=practitioner, optional=optional)
+
+
 def _calendar_revisions(start, end, context):
     """Small change tokens, no patient payload or per-appointment document loading.
 
@@ -227,8 +254,9 @@ def _calendar_revisions(start, end, context):
     """
     stamps = []
     if frappe.db.exists("DocType", "Patient Encounter") and frappe.get_meta("Patient Encounter").has_field("sr_encounter_type"):
-        stamps.extend(_calendar_sql("""SELECT 'Patient Encounter' AS source, e.name,
-            COALESCE(e.pe_appointment_date, e.encounter_date) AS date,
+        fields = _encounter_calendar_fields(start, end)
+        stamps.extend(_calendar_sql(f"""SELECT 'Patient Encounter' AS source, e.name,
+            {fields.date} AS date,
             e.modified, e.docstatus, e.status, e.sr_encounter_status,
             w.workflow_status, w.assigned_agent, w.duration_minutes, w.checked_in_at, w.checked_out_at,
             p.modified AS patient_modified, h.modified AS doctor_modified
@@ -236,11 +264,10 @@ def _calendar_revisions(start, end, context):
             LEFT JOIN `tabMobile Appointment Workflow` w
                 ON w.name=LEFT(SHA2(CONCAT('Patient Encounter:', e.name), 256), 32)
             LEFT JOIN `tabPatient` p ON p.name=e.patient
-            LEFT JOIN `tabHealthcare Practitioner` h ON h.name=COALESCE(NULLIF(e.pe_practitioner, ''), e.practitioner)
+            LEFT JOIN `tabHealthcare Practitioner` h ON h.name={fields.practitioner}
             WHERE e.sr_encounter_type='Appointment'
-                AND ((e.pe_appointment_date >= %s AND e.pe_appointment_date < %s)
-                    OR (e.pe_appointment_date IS NULL AND e.encounter_date >= %s AND e.encounter_date < %s))
-            """, (start, end, start, end), as_dict=True))
+                AND {fields.date_filter}
+            """, fields.params, as_dict=True))
     stamps.extend(_calendar_sql("""SELECT 'Mobile App Appointment' AS source, a.name,
         a.appointment_date AS date, a.modified, a.docstatus, a.status,
         w.workflow_status, w.assigned_agent, w.duration_minutes, w.checked_in_at, w.checked_out_at
@@ -279,14 +306,14 @@ def get_calendar(start, end):
     revisions = _calendar_revisions(start, end, context)
     rows = []
     if frappe.db.exists("DocType", "Patient Encounter") and frappe.get_meta("Patient Encounter").has_field("sr_encounter_type"):
-        encounters = _calendar_sql("""SELECT name, patient_name, patient, sr_pe_mobile, sr_encounter_type,
-            sr_encounter_place, pe_appointment_date, encounter_date, pe_appointment_time,
-            encounter_time, pe_practitioner, practitioner, status, sr_encounter_status, docstatus, created_by_agent
-            FROM `tabPatient Encounter`
-            WHERE sr_encounter_type='Appointment'
-            AND ((pe_appointment_date >= %s AND pe_appointment_date < %s)
-                OR (pe_appointment_date IS NULL AND encounter_date >= %s AND encounter_date < %s))
-            ORDER BY COALESCE(pe_appointment_date, encounter_date) LIMIT 2001""", (start, end, start, end), as_dict=True)
+        fields = _encounter_calendar_fields(start, end)
+        encounters = _calendar_sql(f"""SELECT e.name, e.patient_name, e.patient, e.sr_pe_mobile, e.sr_encounter_type,
+            e.sr_encounter_place, {fields.optional}, e.encounter_date,
+            e.encounter_time, e.practitioner, e.status, e.sr_encounter_status, e.docstatus, e.created_by_agent
+            FROM `tabPatient Encounter` e
+            WHERE e.sr_encounter_type='Appointment'
+            AND {fields.date_filter}
+            ORDER BY {fields.date} LIMIT 2001""", fields.params, as_dict=True)
         missing_patients = {row.patient for row in encounters if row.patient and (not row.patient_name or not row.sr_pe_mobile)}
         patients = {p.name: p for p in frappe.get_all("Patient", filters={"name": ["in", list(missing_patients)]},
             fields=["name", "patient_name", "mobile"], limit_page_length=0)} if missing_patients else {}

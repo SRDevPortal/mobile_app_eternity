@@ -148,9 +148,36 @@ def setup():
                 continue
             definitions[doctype] = [brand_field_definition(doctype, meta.fields[0].fieldname, existing)]
     create_custom_fields(definitions, update=True)
+    repair_missing_brand_columns()
     # Historical records are updated only by an administrator-started job.
     from mobile_app.brand_backfill import ensure_state
     ensure_state()
+
+
+def repair_missing_brand_columns():
+    """Finish DDL left incomplete after Custom Field metadata was committed.
+
+    create_custom_fields can skip unchanged definitions on retry. Check the
+    physical schema separately; this deployment-only operation never backfills
+    historical brand values. Already synchronized tables incur no DDL.
+    """
+    prepare_invoice_brand_schema()
+    repaired = []
+    for doctype in DOCTYPES:
+        if not frappe.db.exists("DocType", doctype):
+            continue
+        frappe.clear_cache(doctype=doctype)
+        if not frappe.get_meta(doctype).has_field(FIELD):
+            continue
+        # A prior failed ALTER must not be concealed by cached column metadata.
+        frappe.cache.hdel("table_columns", "tab" + doctype)
+        if not frappe.db.has_column(doctype, FIELD):
+            frappe.db.updatedb(doctype)
+            frappe.cache.hdel("table_columns", "tab" + doctype)
+            if not frappe.db.has_column(doctype, FIELD):
+                raise RuntimeError(f"Brand column repair did not complete for {doctype}")
+            repaired.append(doctype)
+    return repaired
 
 def backfill():
     """Compatibility entry point: request background work, never scan inline."""
