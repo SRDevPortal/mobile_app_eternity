@@ -271,7 +271,11 @@
                         frappe.route_options = null;
                         frappe.set_route("Form", row.doctype, row.doctype);
                     } else if (row.brand_filtered) {
-                        mobile_app.brand.open(["List", row.doctype]);
+                        if (row.brand_field === "brand") {
+                            const brand = mobile_app.brand.get();
+                            frappe.route_options = brand === "Unclassified" ? {brand: ["is", "not set"]} : brand ? {brand} : {name: ["is", "set"]};
+                            frappe.set_route("List", row.doctype);
+                        } else mobile_app.brand.open(["List", row.doctype]);
                     } else {
                         frappe.route_options = {name: ["is", "set"]};
                         frappe.set_route("List", row.doctype);

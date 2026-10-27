@@ -1,5 +1,10 @@
 frappe.ui.form.on("Mobile App Brand", {
     refresh(frm) {
+        if (!frm.is_new()) {
+            frm.add_custom_button(__("QuickLink Conversations"), () => {
+                frappe.set_route("List", "Mobile App QuickLink Conversation", {brand: frm.doc.name});
+            });
+        }
         if (!frm.is_new() && frappe.user.has_role("System Manager")) {
             frm.add_custom_button(__("Refresh record brands"), async () => {
                 const response = await frappe.call({

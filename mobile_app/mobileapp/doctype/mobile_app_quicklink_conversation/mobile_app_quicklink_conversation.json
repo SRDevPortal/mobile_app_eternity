@@ -1,0 +1,89 @@
+{
+  "doctype": "DocType",
+  "name": "Mobile App QuickLink Conversation",
+  "module": "MobileApp",
+  "autoname": "hash",
+  "engine": "InnoDB",
+  "field_order": [
+    "brand",
+    "mobile_app_user",
+    "mode",
+    "previous_conversation",
+    "support_ticket",
+    "message_sequence",
+    "chat_view"
+  ],
+  "fields": [
+    {
+      "fieldname": "brand",
+      "label": "Brand",
+      "fieldtype": "Link",
+      "read_only": 1,
+      "options": "Mobile App Brand",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "mobile_app_user",
+      "label": "Mobile App User",
+      "fieldtype": "Link",
+      "read_only": 1,
+      "options": "Mobile App User",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "mode",
+      "label": "Mode",
+      "fieldtype": "Select",
+      "read_only": 1,
+      "options": "AI\nHuman\nClosed",
+      "default": "AI",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "previous_conversation",
+      "label": "Previous Conversation",
+      "fieldtype": "Link",
+      "read_only": 1,
+      "options": "Mobile App QuickLink Conversation",
+      "unique": 1
+    },
+    {
+      "fieldname": "support_ticket",
+      "label": "Support Ticket",
+      "fieldtype": "Link",
+      "read_only": 1,
+      "options": "Support Ticket",
+      "unique": 1
+    },
+    {
+      "fieldname": "message_sequence",
+      "label": "Message Sequence",
+      "fieldtype": "Int",
+      "read_only": 1,
+      "default": "0"
+    },
+    {
+      "fieldname": "chat_view",
+      "label": "Chat View",
+      "fieldtype": "HTML",
+      "read_only": 1
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1,
+      "report": 1
+    },
+    {
+      "role": "Mobile App Doctor",
+      "read": 1,
+      "report": 1
+    }
+  ],
+  "sort_field": "modified",
+  "sort_order": "DESC"
+}
