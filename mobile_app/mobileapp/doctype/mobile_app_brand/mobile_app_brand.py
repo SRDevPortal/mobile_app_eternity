@@ -6,6 +6,11 @@ from frappe.model.document import Document
 
 class MobileAppBrand(Document):
     def validate(self):
+        for field in ("system_prompt", "business_info", "product_guidance", "handoff_rules", "examples"):
+            if len(self.get("quicklink_" + field) or "") > 12000:
+                frappe.throw(_("Each QuickLink prompt field must be at most 12,000 characters."))
+        if self.get("quicklink_enabled") and not (self.get("quicklink_system_prompt") or "").strip():
+            frappe.throw(_("Add QuickLink Main Instructions before enabling AI."))
         self.brand_name = (self.brand_name or "").strip()
         self.app_id = (self.app_id or "").strip().lower()
         self.customer_id_prefix = (self.customer_id_prefix or "").strip() or None

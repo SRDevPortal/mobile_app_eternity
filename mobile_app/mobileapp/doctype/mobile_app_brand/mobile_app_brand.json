@@ -10,7 +10,14 @@
     "brand_name",
     "app_id",
     "customer_id_prefix",
-    "chat_channel_account"
+    "chat_channel_account",
+    "quicklink_section",
+    "quicklink_enabled",
+    "quicklink_system_prompt",
+    "quicklink_business_info",
+    "quicklink_product_guidance",
+    "quicklink_handoff_rules",
+    "quicklink_examples"
   ],
   "fields": [
     {
@@ -42,7 +49,47 @@
       "label": "QuickLink Channel Account",
       "fieldtype": "Data",
       "unique": 1,
-      "description": "Exact existing Chat Conversation channel_account value. Leave empty if the app has no QuickLink channel."
+      "description": "Legacy provenance mapping only. Not used by mobile-owned QuickLink.",
+      "hidden": 1
+    },
+    {
+      "fieldname": "quicklink_section",
+      "fieldtype": "Section Break",
+      "label": "QuickLink AI Settings",
+      "description": "Mobile App owns these chats. AI credentials are configured only on the shared backend."
+    },
+    {
+      "fieldname": "quicklink_enabled",
+      "fieldtype": "Check",
+      "label": "Enable QuickLink AI",
+      "default": "0"
+    },
+    {
+      "fieldname": "quicklink_system_prompt",
+      "fieldtype": "Long Text",
+      "label": "Main Instructions",
+      "description": "Role, tone and language. These instructions cannot grant access to private records."
+    },
+    {
+      "fieldname": "quicklink_business_info",
+      "fieldtype": "Long Text",
+      "label": "Business Information and FAQs"
+    },
+    {
+      "fieldname": "quicklink_product_guidance",
+      "fieldtype": "Long Text",
+      "label": "Product Guidance"
+    },
+    {
+      "fieldname": "quicklink_handoff_rules",
+      "fieldtype": "Long Text",
+      "label": "Human Handoff Rules",
+      "description": "Tell the assistant when to suggest the Contact care team button. Clicking it pauses AI and opens a support ticket."
+    },
+    {
+      "fieldname": "quicklink_examples",
+      "fieldtype": "Long Text",
+      "label": "Example Questions and Answers"
     }
   ],
   "permissions": [

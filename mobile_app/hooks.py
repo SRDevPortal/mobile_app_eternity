@@ -348,3 +348,12 @@ for _brand_doctype in ("Mobile App User", "Mobile App Appointment", "Patient Enc
         _existing_brand_handler = [_existing_brand_handler]
     _brand_events["before_validate"] = [*_existing_brand_handler, "mobile_app.brand.stamp"]
 doc_events.setdefault("Mobile App Appointment", {})["on_update"] = "mobile_app.brand.sync_encounter"
+
+
+# QuickLink is owned entirely by mobile_app; preserve existing support notifications.
+after_install.append("mobile_app.api.quicklink.setup")
+after_migrate.append("mobile_app.api.quicklink.setup")
+doc_events["Support Ticket Message"]["after_insert"] = [
+    "mobile_app.realtime.touch_support_ticket",
+    "mobile_app.api.quicklink.mirror_support_message",
+]

@@ -1,0 +1,139 @@
+{
+  "doctype": "DocType",
+  "name": "Mobile App QuickLink Message",
+  "module": "MobileApp",
+  "autoname": "hash",
+  "engine": "InnoDB",
+  "field_order": [
+    "conversation",
+    "sequence",
+    "sender_type",
+    "message",
+    "cards",
+    "reply_to",
+    "job_status",
+    "attempts",
+    "next_attempt",
+    "lease_until",
+    "lease_token",
+    "prompt_revision",
+    "last_error",
+    "support_message"
+  ],
+  "fields": [
+    {
+      "fieldname": "conversation",
+      "label": "Conversation",
+      "fieldtype": "Link",
+      "read_only": 1,
+      "options": "Mobile App QuickLink Conversation",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "sequence",
+      "label": "Sequence",
+      "fieldtype": "Int",
+      "read_only": 1,
+      "reqd": 1
+    },
+    {
+      "fieldname": "sender_type",
+      "label": "Sender Type",
+      "fieldtype": "Select",
+      "read_only": 1,
+      "options": "Customer\nAI\nAgent\nSystem",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "message",
+      "label": "Message",
+      "fieldtype": "Long Text",
+      "read_only": 1,
+      "reqd": 1
+    },
+    {
+      "fieldname": "cards",
+      "label": "Cards",
+      "fieldtype": "Long Text",
+      "read_only": 1,
+      "hidden": 1
+    },
+    {
+      "fieldname": "reply_to",
+      "label": "Reply To",
+      "fieldtype": "Link",
+      "read_only": 1,
+      "options": "Mobile App QuickLink Message"
+    },
+    {
+      "fieldname": "job_status",
+      "label": "Job Status",
+      "fieldtype": "Select",
+      "read_only": 1,
+      "options": "None\nQueued\nProcessing\nDone\nFailed\nCancelled",
+      "default": "None"
+    },
+    {
+      "fieldname": "attempts",
+      "label": "Attempts",
+      "fieldtype": "Int",
+      "read_only": 1,
+      "default": "0"
+    },
+    {
+      "fieldname": "next_attempt",
+      "label": "Next Attempt",
+      "fieldtype": "Datetime",
+      "read_only": 1
+    },
+    {
+      "fieldname": "lease_until",
+      "label": "Lease Until",
+      "fieldtype": "Datetime",
+      "read_only": 1
+    },
+    {
+      "fieldname": "lease_token",
+      "label": "Lease Token",
+      "fieldtype": "Data",
+      "read_only": 1,
+      "hidden": 1
+    },
+    {
+      "fieldname": "prompt_revision",
+      "label": "Prompt Revision",
+      "fieldtype": "Data",
+      "read_only": 1
+    },
+    {
+      "fieldname": "last_error",
+      "label": "Last Error",
+      "fieldtype": "Data",
+      "read_only": 1
+    },
+    {
+      "fieldname": "support_message",
+      "label": "Support Message",
+      "fieldtype": "Link",
+      "read_only": 1,
+      "options": "Support Ticket Message",
+      "unique": 1
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1,
+      "report": 1
+    },
+    {
+      "role": "Mobile App Doctor",
+      "read": 1,
+      "report": 1
+    }
+  ],
+  "sort_field": "modified",
+  "sort_order": "DESC"
+}

@@ -8,7 +8,7 @@ PRIMARY = {"Mobile App User", "Mobile App Appointment", "Support Ticket", "App S
 # Shared clinical, accounting and chat tools already have their own workspaces.
 SHARED = {"Patient Encounter", "Sales Invoice", "Patient", "Healthcare Practitioner", "Diet Chart",
           "Chat Conversation", "Doctor Availability Exception", "Doctor Directory Settings",
-          "OPD State Record", "OPD Token Notification"}
+          "OPD State Record", "OPD Token Notification", "Mobile App QuickLink Message"}
 RELATED = {"Siya Mobile Record"}
 
 
@@ -25,6 +25,8 @@ def get_related_links():
         meta = frappe.get_meta(name)
         if meta.istable:
             continue
-        result.append(dict(doctype=name, single=bool(meta.issingle),
-                           brand_filtered=bool(meta.has_field(FIELD))))
+        row = dict(doctype=name, single=bool(meta.issingle), brand_filtered=bool(meta.has_field(FIELD)))
+        if name == "Mobile App QuickLink Conversation":
+            row.update(brand_filtered=True, brand_field="brand")
+        result.append(row)
     return result
